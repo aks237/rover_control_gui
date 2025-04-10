@@ -1,0 +1,111 @@
+<!-- templates/control.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Control Page</h2>
+
+<!-- Tabs for Arm, Drives, and Astrotech -->
+<ul class="nav nav-tabs" id="controlTabs" role="tablist">
+  {% for tab in commands.keys() %}
+    <li class="nav-item">
+      <a class="nav-link {% if loop.first %}active{% endif %}" id="{{ tab }}-tab" data-toggle="tab" href="#{{ tab }}" role="tab" aria-controls="{{ tab }}" aria-selected="true">{{ tab }}</a>
+    </li>
+  {% endfor %}
+</ul>
+<div class="tab-content" id="controlTabsContent">
+  {% for tab, cmd_dict in commands.items() %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ tab }}" role="tabpanel" aria-labelledby="{{ tab }}-tab">
+      <h3>{{ tab }} Controls</h3>
+      {% if tab == "Arm" %}
+        <!-- Arm Tab -->
+        <button class="btn btn-lg btn-success command-btn" data-category="{{ tab }}" data-command="arm">Start</button>
+        <br/><br/>
+        <!-- Publish "off" to /arm_control_mode/new instead of killing process -->
+        <button class="btn btn-lg btn-danger publish-btn" data-topic="/arm_control_mode/new" data-value="off">Stop</button>
+        <br/><br/>
+        <h4>Mode</h4>
+        <table class="table">
+          <tr>
+            <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="ik">ik</button></td>
+            <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="mini_arm">mini_arm</button></td>
+          </tr>
+        </table>
+      {% elif tab == "Drives" %}
+        <!-- Drives Tab -->
+        <button class="btn btn-lg btn-success command-btn" data-category="{{ tab }}" data-command="drives">Start</button>
+        <br/><br/>
+        <!-- Publish "off" to /drives/control_mode/new instead of killing process -->
+        <button class="btn btn-lg btn-danger publish-btn" data-topic="/drives/control_mode/new" data-value="off">Stop</button>
+        <br/><br/>
+        <h4>Mode</h4>
+        <table class="table">
+          <tr>
+            <td><button class="btn btn-info mode-btn" data-topic="/drives/control_mode/new" data-value="manual">manual</button></td>
+            <td><button class="btn btn-info mode-btn" data-topic="/drives/control_mode/new" data-value="autonomy">autonomy</button></td>
+          </tr>
+        </table>
+      {% else %}
+        {% for cmd_name, cmd in cmd_dict.items() %}
+         <button class="btn btn-primary command-btn" data-category="{{ tab }}" data-command="{{ cmd_name }}">{{ cmd_name }}</button>
+         <button class="btn btn-danger kill-btn" data-command="{{ cmd_name }}">Kill</button>
+         <br/><br/>
+        {% endfor %}
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+<div id="response" class="mt-3"></div>
+
+<script>
+  $(document).ready(function(){
+      var socket = io();
+
+      // For start commands (used by Arm/Drives start buttons and other tabs)
+      $('.command-btn').click(function(){
+          var command_name = $(this).data('command');
+          var category = $(this).data('category');
+          socket.emit('command', {command_name: command_name, category: category});
+      });
+
+      // For publish commands (used by Stop buttons on Arm/Drives)
+      $('.publish-btn').click(function(){
+          var topic = $(this).data('topic');
+          var value = $(this).data('value');
+          socket.emit('publish_topic', {
+              topic: topic,
+              msg_type: "std_msgs/String",
+              fields: {data: value}
+          });
+      });
+
+      // For mode selection buttons in Arm and Drives tabs.
+      $('.mode-btn').click(function(){
+          var topic = $(this).data('topic');
+          var value = $(this).data('value');
+          socket.emit('publish_topic', {
+              topic: topic,
+              msg_type: "std_msgs/String",
+              fields: {data: value}
+          });
+      });
+
+      // For kill commands (for other tabs if needed)
+      $('.kill-btn').click(function(){
+          var command_name = $(this).data('command');
+          socket.emit('kill_command', {command_name: command_name});
+      });
+
+      socket.on('command_response', function(data){
+          $('#response').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+      });
+
+      socket.on('kill_response', function(data){
+          $('#response').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+      });
+
+      socket.on('publish_response', function(data){
+          $('#response').html('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+      });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ROS2 Control Panel</title>
+    <!-- Load Socket.IO from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>ROS2 Control Panel</h1>
+    <button onclick="sendCommand('start_node')">Start Node</button>
+    <button onclick="sendCommand('kill_node')">Kill Node</button>
+    <button onclick="sendCommand('launch_file')">Launch File</button>
+    <button onclick="sendCommand('list_topics')">List Topics</button>
+    
+    <h3>Output:</h3>
+    <pre id="output"></pre>
+
+    <script type="text/javascript">
+      var socket = io();
+
+      // Function to send a command via websocket
+      function sendCommand(cmd) {
+        socket.emit('command', {cmd: cmd});
+      }
+
+      // Listen for responses from the server
+      socket.on('command_response', function(data) {
+        var output = document.getElementById('output');
+        if (data.error) {
+          output.textContent = "Error: " + data.error;
+        } else {
+          output.textContent = "Stdout:\n" + data.stdout + "\nStderr:\n" + data.stderr;
+        }
+      });
+    </script>
+  </body>
+</html>
