@@ -17,19 +17,32 @@
     <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ tab }}" role="tabpanel" aria-labelledby="{{ tab }}-tab">
       <h3>{{ tab }} Controls</h3>
       {% if tab == "Arm" %}
-        <!-- Arm Tab -->
-        <button class="btn btn-lg btn-success command-btn" data-category="{{ tab }}" data-command="arm">Start</button>
-        <br/><br/>
-        <!-- Publish "off" to /arm_control_mode/new instead of killing process -->
-        <button class="btn btn-lg btn-danger publish-btn" data-topic="/arm_control_mode/new" data-value="off">Stop</button>
-        <br/><br/>
-        <h4>Mode</h4>
-        <table class="table">
-          <tr>
-            <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="ik">ik</button></td>
-            <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="mini_arm">mini_arm</button></td>
-          </tr>
-        </table>
+      <!-- Arm Tab -->
+      <button class="btn btn-lg btn-success command-btn" data-category="{{ tab }}" data-command="arm">Start</button>
+      <br/><br/>
+      <!-- Publish "off" to /arm_control_mode/new instead of killing process -->
+      <button class="btn btn-lg btn-danger publish-btn" data-topic="/arm_control_mode/new" data-value="off">Stop</button>
+      <br/><br/>
+      <h4>Mode</h4>
+      <table class="table">
+        <tr>
+          <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="ik">ik</button></td>
+          <td><button class="btn btn-info mode-btn" data-topic="/arm_control_mode/new" data-value="mini_arm">mini_arm</button></td>
+        </tr>
+      </table>
+    
+      <!-- Camera preview from /zed/image_left -->
+      <h4>ZED feed</h4>
+      <img id="arm-camera" src="/image_feed" alt="Arm Camera Feed" style="max-width:400px;"/>
+    
+      <script>
+        // Refresh the <img> once per second to grab the latest frame
+        setInterval(() => {
+          const d = new Date().getTime(); // unique timestamp to bust browser cache
+          document.getElementById("arm-camera").src = "/image_feed?" + d;
+        }, 200);
+      </script>
+    
       {% elif tab == "Drives" %}
         <!-- Drives Tab -->
         <button class="btn btn-lg btn-success command-btn" data-category="{{ tab }}" data-command="drives">Start</button>

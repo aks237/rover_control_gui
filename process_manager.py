@@ -1,31 +1,38 @@
 # process_manager.py
 import subprocess
 
-# Dictionary to keep track of running processes.
 processes = {}
 
 def start_process(name, command):
-    """
-    Starts a process for the given command, stores it by name, and returns the PID.
-    """
-    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
     processes[name] = proc
-    return proc.pid
+
+    try:
+        stdout, stderr = proc.communicate(timeout=1.0)
+    except subprocess.TimeoutExpired:
+        stdout, stderr = "", ""
+
+    return {
+        'pid': proc.pid,
+        'stdout': stdout,
+        'stderr': stderr,
+        'running': proc.poll() is None
+    }
 
 def kill_process(name):
-    """
-    Kills the process associated with the given name.
-    Returns True if found and killed, False otherwise.
-    """
     if name in processes:
         proc = processes[name]
-        proc.kill()
+        try:
+            proc.kill()
+            stdout, stderr = proc.communicate(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = "", ""
         del processes[name]
-        return True
-    return False
-
-def list_processes():
-    """
-    Returns a dictionary mapping process names to their PIDs.
-    """
-    return {name: proc.pid for name, proc in processes.items()}
+        return True, {'stdout': stdout, 'stderr': stderr}
+    return False, None
